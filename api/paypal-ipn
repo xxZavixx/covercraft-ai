@@ -1,30 +1,44 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).end("Only POST allowed");
-
-  const body = new URLSearchParams(req.body).toString();
-
-  const verifyRes = await fetch("https://ipnpb.paypal.com/cgi-bin/webscr", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `cmd=_notify-validate&${body}`,
-  });
-
-  const verifyText = await verifyRes.text();
-
-  if (verifyText === "VERIFIED") {
-    // Optionally confirm payment status
-    const isCompleted = req.body.payment_status === "Completed";
-    const isCorrectEmail = req.body.receiver_email === "xzavierharris25@gmail.com";
-
-    if (isCompleted && isCorrectEmail) {
-      // Unlock logic here (e.g., flag user, send webhook, etc.)
-      console.log("✅ Payment verified and completed.");
-    } else {
-      console.log("⚠️ Payment not completed or incorrect receiver.");
-    }
-  } else {
-    console.log("❌ Invalid IPN call.");
+  if (req.method !== "POST") {
+    return res.status(405).end("Only POST allowed");
   }
 
-  res.status(200).end();
+  try {
+    const body = new URLSearchParams(req.body).toString();
+
+    const verifyRes = await fetch("https://ipnpb.paypal.com/cgi-bin/webscr", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `cmd=_notify-validate&${body}`,
+    });
+
+    const verifyText = await verifyRes.text();
+
+    if (verifyText === "VERIFIED") {
+      const { payment_status, receiver_email, payer_email, txn_id, mc_gross } = req.body;
+
+      const isCompleted = payment_status === "Completed";
+      const isCorrectEmail = receiver_email === "xzavierharris25@gmail.com";
+
+      if (isCompleted && isCorrectEmail) {
+        console.log("✅ VERIFIED PayPal payment:");
+        console.log(`- From: ${payer_email}`);
+        console.log(`- Amount: ${mc_gross}`);
+        console.log(`- Transaction ID: ${txn_id}`);
+
+        // TODO: Add unlock logic here (e.g., update DB, notify via webhook, send email)
+      } else {
+        console.log("⚠️ Payment not completed or wrong receiver email.");
+      }
+    } else {
+      console.log("❌ Invalid IPN: PayPal did not verify.");
+    }
+
+    res.status(200).end();
+  } catch (error) {
+    console.error("❌ IPN Handler Error:", error);
+    res.status(500).end("Internal server error");
+  }
 }
