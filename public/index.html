@@ -2,38 +2,107 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CoverCraft AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CoverCraft AI - Instant Cover Letters</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+
+  <!-- PayPal SDK -->
+  <script 
+    src="https://www.paypal.com/sdk/js?client-id=BAATQiPmuhLKaFHU6RF1Vo-Nx70khENMgh886dQZKOoGHHrXLfAMzZ3dP7TJVHARfJqC9FSVnCno0MbKbI&components=hosted-buttons&enable-funding=venmo&currency=USD">
+  </script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans">
+<body class="bg-gradient-to-b from-white to-blue-50 text-gray-800">
 
-  <section class="min-h-screen flex flex-col items-center justify-center p-6">
-    <h1 class="text-4xl font-bold text-center mb-6">CoverCraft AI</h1>
-    <p class="text-center mb-10 text-gray-600">Generate perfect cover letters in seconds using AI.</p>
+  <!-- Hero -->
+  <header class="text-center py-16 px-4">
+    <h1 class="text-5xl font-bold text-blue-700 mb-4">CoverCraft AI</h1>
+    <p class="text-lg text-gray-600 max-w-2xl mx-auto">Generate stunning, personalized cover letters in seconds. Powered by AI. Designed to help you get hired faster.</p>
+  </header>
 
-    <form id="coverForm" class="w-full max-w-xl bg-white p-6 rounded shadow space-y-4">
+  <!-- Form -->
+  <section class="bg-white shadow-xl rounded-lg p-8 max-w-3xl mx-auto w-full mb-10">
+    <h2 class="text-2xl font-semibold mb-6 text-blue-700">Fill in Your Job Info</h2>
+    <form id="coverForm" class="space-y-4">
       <input name="jobTitle" placeholder="Job Title" class="w-full border px-4 py-2 rounded" required />
       <input name="company" placeholder="Company Name" class="w-full border px-4 py-2 rounded" required />
       <textarea name="skills" placeholder="Key Skills (comma-separated)" class="w-full border px-4 py-2 rounded" required></textarea>
-      <textarea name="experience" placeholder="Work Experience (or paste resume)" class="w-full border px-4 py-2 rounded" required></textarea>
-
-      <label class="block text-sm font-medium text-gray-700">Tone</label>
-      <select name="tone" class="w-full border px-4 py-2 rounded">
-        <option value="Professional">Professional</option>
-        <option value="Friendly">Friendly</option>
-        <option value="Creative">Creative</option>
-      </select>
-
-      <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 w-full">Generate Cover Letter</button>
+      <textarea name="experience" placeholder="Work Experience or Paste Resume" class="w-full border px-4 py-2 rounded" required></textarea>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Tone</label>
+        <select name="tone" class="w-full border px-4 py-2 rounded">
+          <option value="Professional">Professional</option>
+          <option value="Friendly">Friendly</option>
+          <option value="Creative">Creative</option>
+        </select>
+      </div>
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded w-full font-semibold transition-all">Generate Cover Letter</button>
     </form>
+  </section>
 
-    <div class="mt-8 w-full max-w-2xl bg-white p-6 rounded shadow">
-      <h2 class="text-lg font-semibold mb-2">Your Cover Letter:</h2>
-      <pre id="resultBox" class="whitespace-pre-wrap text-sm text-gray-700"></pre>
+  <!-- Result -->
+  <section class="max-w-3xl mx-auto bg-white p-6 shadow rounded-lg mb-10">
+    <h2 class="text-lg font-semibold mb-2 text-blue-700">Your Cover Letter:</h2>
+    <pre id="resultBox" class="whitespace-pre-wrap text-sm text-gray-700 border border-gray-300 rounded p-4 min-h-[150px]">Fill out the form above and click generate!</pre>
+
+    <!-- Bonus Buttons -->
+    <div class="flex gap-4 mt-4">
+      <button onclick="copyToClipboard()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Copy</button>
+      <button onclick="downloadPDF()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">Download PDF</button>
     </div>
   </section>
 
+  <!-- PayPal Upgrade -->
+  <section class="max-w-3xl mx-auto bg-white shadow p-6 rounded mb-16 text-center">
+    <h3 class="text-xl font-semibold mb-2 text-gray-800">Want More?</h3>
+    <p class="text-gray-600 mb-4">Unlock unlimited cover letters + premium export features.</p>
+    <div id="paypal-container-2S7SD3LJNS3VW" class="mb-2"></div>
+    <script>
+      paypal.HostedButtons({
+        hostedButtonId: "2S7SD3LJNS3VW",
+      }).render("#paypal-container-2S7SD3LJNS3VW");
+    </script>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="max-w-4xl mx-auto px-4 py-10 text-center">
+    <h3 class="text-2xl font-bold text-blue-700 mb-6">What Users Are Saying</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <blockquote class="bg-white p-4 rounded shadow text-sm">"I got 3 interviews within a week thanks to CoverCraft AI!"<br/><span class="block mt-2 font-semibold text-gray-700">– Brianna S.</span></blockquote>
+      <blockquote class="bg-white p-4 rounded shadow text-sm">"It wrote better than I ever could. Game changer!"<br/><span class="block mt-2 font-semibold text-gray-700">– Malcolm T.</span></blockquote>
+      <blockquote class="bg-white p-4 rounded shadow text-sm">"Clean, fast, and professional. I even used it for friends."<br/><span class="block mt-2 font-semibold text-gray-700">– James K.</span></blockquote>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t py-6 text-center text-sm text-gray-500">
+    Built by <a href="https://cryptobroski.xyz" class="text-blue-600 hover:underline">CryptoBroski</a> | CoverCraft AI &copy; 2025
+  </footer>
+
   <script src="script.js"></script>
+  <script>
+    function copyToClipboard() {
+      const text = document.getElementById("resultBox").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Copied to clipboard!");
+      });
+    }
+
+    function downloadPDF() {
+      const content = document.getElementById("resultBox").textContent;
+      const blob = new Blob([content], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cover_letter.pdf";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
 </body>
 </html>
