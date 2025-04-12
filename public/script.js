@@ -10,8 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
     history.replaceState({}, document.title, window.location.pathname); // Clean URL
   }
 
-  // Initialize free try count if not already set
-  if (localStorage.getItem("coverTries") === null) {
+  // Initialize free try count only if never set
+  if (!localStorage.getItem("coverTries")) {
     localStorage.setItem("coverTries", "0");
   }
 
@@ -34,6 +34,7 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
   const isPro = localStorage.getItem("isProUser") === "true";
   let tries = parseInt(localStorage.getItem("coverTries") || "0");
 
+  // Block free users over the limit
   if (!isPro && tries >= 2) {
     alert("You've reached your free limit. Please upgrade to CoverCraft Pro.");
     document.getElementById("paypal-container-2S7SD3LJNS3VW")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -60,6 +61,7 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
     if (response.ok && data.output) {
       resultBox.textContent = data.output;
 
+      // Update free tries
       if (!isPro) {
         tries++;
         localStorage.setItem("coverTries", tries.toString());
