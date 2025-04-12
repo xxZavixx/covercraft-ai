@@ -12,11 +12,6 @@
       font-family: 'Inter', sans-serif;
     }
   </style>
-
-  <!-- PayPal SDK -->
-  <script 
-    src="https://www.paypal.com/sdk/js?client-id=BAATQiPmuhLKaFHU6RF1Vo-Nx70khENMgh886dQZKOoGHHrXLfAMzZ3dP7TJVHARfJqC9FSVnCno0MbKbI&components=hosted-buttons&enable-funding=venmo&currency=USD">
-  </script>
 </head>
 <body class="bg-gradient-to-b from-white to-blue-50 text-gray-800">
 
@@ -64,11 +59,6 @@
     <p class="text-gray-600 mb-4">Unlock unlimited cover letters + premium export features.</p>
     <div id="paypal-container-2S7SD3LJNS3VW" class="mb-2"></div>
     <p class="text-sm text-gray-500 mt-2">Already paid? Please return from the PayPal thank-you page to unlock Pro.</p>
-    <script>
-      paypal.HostedButtons({
-        hostedButtonId: "2S7SD3LJNS3VW",
-      }).render("#paypal-container-2S7SD3LJNS3VW");
-    </script>
   </section>
 
   <!-- Footer -->
@@ -76,8 +66,16 @@
     Built by <a href="https://cryptobroski.xyz" class="text-blue-600 hover:underline">CryptoBroski</a> | CoverCraft AI &copy; 2025
   </footer>
 
-  <!-- Scripts -->
+  <!-- PayPal SDK and render logic -->
+  <script 
+    src="https://www.paypal.com/sdk/js?client-id=BAATQiPmuhLKaFHU6RF1Vo-Nx70khENMgh886dQZKOoGHHrXLfAMzZ3dP7TJVHARfJqC9FSVnCno0MbKbI&components=hosted-buttons&enable-funding=venmo&currency=USD"
+    onload="paypal.HostedButtons({ hostedButtonId: '2S7SD3LJNS3VW' }).render('#paypal-container-2S7SD3LJNS3VW');">
+  </script>
+
+  <!-- Script.js -->
   <script src="script.js"></script>
+
+  <!-- UI Utilities -->
   <script>
     function copyToClipboard() {
       const text = document.getElementById("resultBox").textContent;
@@ -98,7 +96,6 @@
         alert("Nothing to download.");
         return;
       }
-
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
       const lines = doc.splitTextToSize(content, 180);
