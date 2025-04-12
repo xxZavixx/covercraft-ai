@@ -3,6 +3,7 @@
 import * as admin from "firebase-admin";
 import { Buffer } from "buffer";
 
+// Initialize Firebase Admin SDK only once
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(
     Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, "base64").toString("utf8")
@@ -22,10 +23,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing email" });
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+
   try {
     const snapshot = await db
       .collection("buyers")
-      .where("email", "==", email.toLowerCase())
+      .where("email", "==", normalizedEmail)
       .limit(1)
       .get();
 
