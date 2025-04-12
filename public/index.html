@@ -22,7 +22,7 @@
   <!-- Hero -->
   <header class="text-center py-16 px-4">
     <h1 class="text-5xl font-bold text-blue-700 mb-4">CoverCraft AI</h1>
-    <p class="text-lg text-gray-600 max-w-2xl mx-auto">Generate stunning, personalized cover letters in seconds. Powered by AI. Designed to help you get hired faster.</p>
+    <p class="text-lg text-gray-600 max-w-2xl mx-auto">Generate stunning, personalized cover letters in seconds. Powered by AI.</p>
   </header>
 
   <!-- Form -->
@@ -42,6 +42,7 @@
         </select>
       </div>
       <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded w-full font-semibold transition-all">Generate Cover Letter</button>
+      <p class="text-xs text-center text-gray-500 mt-2" id="genCountMsg"></p>
     </form>
   </section>
 
@@ -50,7 +51,6 @@
     <h2 class="text-lg font-semibold mb-2 text-blue-700">Your Cover Letter:</h2>
     <pre id="resultBox" class="whitespace-pre-wrap text-sm text-gray-700 border border-gray-300 rounded p-4 min-h-[150px]">Fill out the form above and click generate!</pre>
 
-    <!-- Bonus Buttons -->
     <div class="flex gap-4 mt-4">
       <button onclick="copyToClipboard()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">Copy</button>
       <button onclick="downloadPDF()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded">Download PDF</button>
@@ -62,21 +62,12 @@
     <h3 class="text-xl font-semibold mb-2 text-gray-800">Want More?</h3>
     <p class="text-gray-600 mb-4">Unlock unlimited cover letters + premium export features.</p>
     <div id="paypal-container-2S7SD3LJNS3VW" class="mb-2"></div>
+    <button onclick="unlockPro()" class="text-sm text-blue-500 underline mt-2">Already paid? Click here to unlock Pro</button>
     <script>
       paypal.HostedButtons({
         hostedButtonId: "2S7SD3LJNS3VW",
       }).render("#paypal-container-2S7SD3LJNS3VW");
     </script>
-  </section>
-
-  <!-- Testimonials -->
-  <section class="max-w-4xl mx-auto px-4 py-10 text-center">
-    <h3 class="text-2xl font-bold text-blue-700 mb-6">What Users Are Saying</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <blockquote class="bg-white p-4 rounded shadow text-sm">"I got 3 interviews within a week thanks to CoverCraft AI!"<br/><span class="block mt-2 font-semibold text-gray-700">– Brianna S.</span></blockquote>
-      <blockquote class="bg-white p-4 rounded shadow text-sm">"It wrote better than I ever could. Game changer!"<br/><span class="block mt-2 font-semibold text-gray-700">– Malcolm T.</span></blockquote>
-      <blockquote class="bg-white p-4 rounded shadow text-sm">"Clean, fast, and professional. I even used it for friends."<br/><span class="block mt-2 font-semibold text-gray-700">– James K.</span></blockquote>
-    </div>
   </section>
 
   <!-- Footer -->
@@ -102,6 +93,21 @@
       a.download = "cover_letter.pdf";
       a.click();
       URL.revokeObjectURL(url);
+    }
+
+    function unlockPro() {
+      localStorage.setItem("isProUser", "true");
+      alert("CoverCraft Pro unlocked!");
+      document.getElementById("genCountMsg").textContent = "Pro access unlocked.";
+    }
+
+    // Display current usage count
+    const tries = parseInt(localStorage.getItem("coverTries") || "0");
+    const isPro = localStorage.getItem("isProUser") === "true";
+    if (isPro) {
+      document.getElementById("genCountMsg").textContent = "Pro access unlocked.";
+    } else {
+      document.getElementById("genCountMsg").textContent = `${tries}/2 free uses used.`;
     }
   </script>
 </body>
