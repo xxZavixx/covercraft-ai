@@ -24,6 +24,21 @@
   <!-- Form -->
   <section class="bg-white shadow-xl rounded-lg p-8 max-w-3xl mx-auto w-full mb-10">
     <h2 class="text-2xl font-semibold mb-6 text-blue-700">Fill in Your Job Info</h2>
+
+    <!-- Email for credit tracking -->
+    <div class="mb-4">
+      <label for="userEmail" class="block text-sm font-medium text-gray-700 mb-1">
+        Your Email (for free & paid access)
+      </label>
+      <input
+        type="email"
+        id="userEmail"
+        placeholder="you@example.com"
+        class="w-full border px-4 py-2 rounded"
+        required
+      />
+    </div>
+
     <form id="coverForm" class="space-y-4">
       <input name="jobTitle" placeholder="Job Title" class="w-full border px-4 py-2 rounded" required />
       <input name="company" placeholder="Company Name" class="w-full border px-4 py-2 rounded" required />
@@ -38,7 +53,7 @@
         </select>
       </div>
       <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded w-full font-semibold transition-all">Generate Cover Letter</button>
-      <p class="text-xs text-center text-gray-500 mt-2" id="genCountMsg"></p>
+      <p class="text-xs text-center text-gray-500 mt-2" id="genCountMsg">Checking credits...</p>
     </form>
   </section>
 
@@ -54,40 +69,49 @@
   </section>
 
   <!-- PayPal Upgrade -->
-<section class="max-w-3xl mx-auto bg-white shadow p-6 rounded mb-16 text-center">
-  <h3 class="text-xl font-semibold mb-2 text-gray-800">Want More?</h3>
-  <p class="text-gray-600 mb-4">Unlock unlimited cover letters + premium export features.</p>
+  <section class="max-w-3xl mx-auto bg-white shadow p-6 rounded mb-10 text-center">
+    <h3 class="text-xl font-semibold mb-2 text-gray-800">Want More?</h3>
+    <p class="text-gray-600 mb-4">Pay $7.99 to unlock 15 additional cover letter generations.</p>
+    <div id="paypal-container-2S7SD3LJNS3VW" class="mb-2"></div>
+  </section>
 
-  <div id="paypal-container-2S7SD3LJNS3VW" class="mb-2"></div>
-
-  <!-- Secure Manual Unlock Link (Initially Hidden) -->
-  <div id="manualUnlockWrapper" style="display: none;">
-    <p class="text-sm text-gray-600 mt-4">
-      Already paid but didn’t get redirected?
-      <a id="manualUnlockLink" href="/?pro=1" class="text-blue-600 underline">Click here to unlock Pro manually</a>.
-    </p>
-    <p class="text-sm text-gray-500 mt-2">If this doesn't work, make sure your PayPal payment went through successfully.</p>
-  </div>
-</section>
-
-  <p class="text-sm text-gray-500 mt-2">If this doesn't work, make sure your PayPal payment went through successfully.</p>
-</section>
+  <!-- Manual Unlock (email lookup) -->
+  <section class="max-w-3xl mx-auto bg-white shadow p-6 rounded text-center mb-20">
+    <h3 class="text-lg font-semibold text-gray-800 mb-2">Already paid?</h3>
+    <p class="text-sm text-gray-600 mb-4">Enter your PayPal email to restore your 15 credits.</p>
+    <form id="emailUnlockForm" class="flex flex-col sm:flex-row gap-2 justify-center items-center">
+      <input
+        type="email"
+        name="email"
+        placeholder="your@email.com"
+        class="border px-4 py-2 rounded w-full sm:w-64"
+        required
+      />
+      <button
+        type="submit"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
+      >
+        Unlock
+      </button>
+    </form>
+    <p id="unlockStatus" class="text-sm mt-2 text-gray-500"></p>
+  </section>
 
   <!-- Footer -->
   <footer class="bg-white border-t py-6 text-center text-sm text-gray-500">
     Built by <a href="https://cryptobroski.xyz" class="text-blue-600 hover:underline">CryptoBroski</a> | CoverCraft AI &copy; 2025
   </footer>
 
-  <!-- PayPal SDK and render logic -->
+  <!-- PayPal SDK -->
   <script 
     src="https://www.paypal.com/sdk/js?client-id=BAATQiPmuhLKaFHU6RF1Vo-Nx70khENMgh886dQZKOoGHHrXLfAMzZ3dP7TJVHARfJqC9FSVnCno0MbKbI&components=hosted-buttons&enable-funding=venmo&currency=USD"
     onload="paypal.HostedButtons({ hostedButtonId: '2S7SD3LJNS3VW' }).render('#paypal-container-2S7SD3LJNS3VW');">
   </script>
 
-  <!-- Script.js -->
+  <!-- Main script -->
   <script src="script.js"></script>
 
-  <!-- UI Utilities -->
+  <!-- Utility functions -->
   <script>
     function copyToClipboard() {
       const text = document.getElementById("resultBox").textContent;
