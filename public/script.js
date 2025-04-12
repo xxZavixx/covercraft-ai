@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const emailInput = document.getElementById("userEmail");
   const countMsg = document.getElementById("genCountMsg");
 
-  // If redirected from PayPal with Pro access
+  // Unlock via redirect
   const params = new URLSearchParams(window.location.search);
   if (params.get("pro") === "1") {
     localStorage.setItem("allowManualUnlock", "true");
@@ -10,14 +10,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     history.replaceState({}, document.title, window.location.pathname);
   }
 
-  // Show manual unlock option
+  // Manual unlock visibility
   const allowManualUnlock = localStorage.getItem("allowManualUnlock") === "true";
   const manualWrapper = document.getElementById("manualUnlockWrapper");
   if (manualWrapper && allowManualUnlock) {
     manualWrapper.style.display = "block";
   }
 
-  // Manual unlock form
+  // Manual unlock by email
   document.getElementById("emailUnlockForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const status = document.getElementById("unlockStatus");
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   });
 
-  // Auto-load stored email and display credit count
+  // Auto-fetch stored email + update credit count
   const storedEmail = localStorage.getItem("userEmail");
   if (storedEmail && emailInput) {
     emailInput.value = storedEmail;
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// Main form submission
+// Generate Cover Letter
 document.getElementById("coverForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -78,7 +78,7 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
 
   localStorage.setItem("userEmail", email);
 
-  // Check credits before generating
+  // Step 1: Check credits
   const checkRes = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
   const creditData = await checkRes.json();
 
@@ -88,6 +88,7 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
     return;
   }
 
+  // Step 2: Submit form
   const formData = new FormData(e.target);
   const userInput = Object.fromEntries(formData.entries());
   const resultBox = document.getElementById("resultBox");
@@ -105,19 +106,19 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
     if (response.ok && data.output) {
       resultBox.textContent = data.output;
 
-      // Use a credit
+      // Step 3: Consume a credit
       await fetch("/api/use-credit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email })
       });
 
-      // Refresh credit count
+      // Step 4: Refresh remaining credits
       const refreshRes = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
       const refreshData = await refreshRes.json();
-      const countMsg = document.getElementById("genCountMsg");
-      if (countMsg && typeof refreshData.credits === "number") {
-        countMsg.textContent = `${refreshData.credits} credits remaining.`;
+      if (refreshRes.ok && typeof refreshData.credits === "number") {
+        const countMsg = document.getElementById("genCountMsg");
+        if (countMsg) countMsg.textContent = `${refreshData.credits} credits remaining.`;
       }
     } else {
       resultBox.textContent = data.error || "Something went wrong generating your cover letter.";
