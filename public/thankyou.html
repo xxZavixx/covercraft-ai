@@ -7,10 +7,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+      // Set unlock flag
+      localStorage.setItem("allowManualUnlock", "true");
+
       const redirectToHome = () => {
         clearInterval(interval);
         window.location.href = `${window.location.origin}/?pro=1`;
       };
+
       const countdown = setTimeout(redirectToHome, 6000);
 
       let seconds = 6;
