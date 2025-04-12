@@ -1,6 +1,5 @@
 // /api/paypal-ipn.js
 
-import { NextApiRequest, NextApiResponse } from "next";
 import * as admin from "firebase-admin";
 import fetch from "node-fetch";
 import { Buffer } from "buffer";
@@ -10,7 +9,6 @@ if (!admin.apps.length) {
   const serviceAccount = JSON.parse(
     Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, "base64").toString("utf8")
   );
-
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
@@ -26,6 +24,7 @@ export default async function handler(req, res) {
   try {
     const body = new URLSearchParams(req.body).toString();
 
+    // Verify the IPN message with PayPal
     const verifyRes = await fetch("https://ipnpb.paypal.com/cgi-bin/webscr", {
       method: "POST",
       headers: {
@@ -53,43 +52,45 @@ export default async function handler(req, res) {
 
       if (isCompleted && isCorrectEmail) {
         const email = payer_email.toLowerCase();
-        const buyerRef = db.collection("buyers").doc(email);
-        const buyerDoc = await buyerRef.get();
 
-        const currentCredits = buyerDoc.exists ? buyerDoc.data()?.credits || 0 : 0;
-
-        // Prevent duplicate processing by checking txn_id
+        // Prevent duplicate transactions
         const txnRef = db.collection("transactions").doc(txn_id);
-        const txnDoc = await txnRef.get();
+        const txnSnap = await txnRef.get();
 
-        if (!txnDoc.exists) {
-          await buyerRef.set(
-            {
-              email,
-              payer_id,
-              payer_name: `${first_name} ${last_name}`,
-              amount: mc_gross,
-              credits: currentCredits + 15, // add 15 new credits
-              lastPayment: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            { merge: true }
-          );
-
-          await txnRef.set({
-            email,
-            amount: mc_gross,
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          });
-
-          console.log("✅ Buyer and transaction stored.");
-        } else {
-          console.log("ℹ️ Transaction already exists. Skipping duplicate.");
+        if (txnSnap.exists) {
+          console.log("ℹ️ Transaction already exists. Skipping.");
+          return res.status(200).end();
         }
+
+        // Update buyer credits (by email)
+        const buyerRef = db.collection("buyers").doc(email);
+        const buyerSnap = await buyerRef.get();
+        const currentCredits = buyerSnap.exists ? buyerSnap.data()?.credits || 0 : 0;
+
+        await buyerRef.set(
+          {
+            email,
+            credits: currentCredits + 15,
+            payer_id,
+            payer_name: `${first_name} ${last_name}`,
+            amount: mc_gross,
+            lastPayment: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        await txnRef.set({
+          email,
+          amount: mc_gross,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(`✅ ${email} credited with 15 tokens.`);
       } else {
-        console.log("⚠️ Payment not completed or wrong receiver email.");
+        console.warn("⚠️ Payment not completed or wrong receiver email.");
       }
     } else {
-      console.log("❌ Invalid IPN: PayPal did not verify.");
+      console.error("❌ IPN message not verified.");
     }
 
     res.status(200).end();
