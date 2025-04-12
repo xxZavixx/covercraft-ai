@@ -1,58 +1,79 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const params = new URLSearchParams(window.location.search);
-
-  // Unlock Pro if redirected from PayPal thank-you page
-  if (params.get("pro") === "1") {
-    localStorage.setItem("isProUser", "true");
-    localStorage.setItem("allowManualUnlock", "true"); // allow future unlock visibility
-    alert("Thank you for upgrading to CoverCraft Pro!");
-    const countMsg = document.getElementById("genCountMsg");
-    if (countMsg) countMsg.textContent = "Pro access unlocked.";
-    history.replaceState({}, document.title, window.location.pathname); // Clean URL
-  }
-
-  // Initialize free try count only if never set
-  if (!localStorage.getItem("coverTries")) {
-    localStorage.setItem("coverTries", "0");
-  }
-
-  const isPro = localStorage.getItem("isProUser") === "true";
-  const allowManualUnlock = localStorage.getItem("allowManualUnlock") === "true";
-  const tries = parseInt(localStorage.getItem("coverTries") || "0");
+document.addEventListener("DOMContentLoaded", async () => {
+  const emailInput = document.getElementById("userEmail");
   const countMsg = document.getElementById("genCountMsg");
 
-  // Update usage counter
-  if (countMsg) {
-    if (isPro) {
-      countMsg.textContent = "Pro access unlocked.";
-    } else {
-      countMsg.textContent = `${tries}/2 free uses used.`;
-    }
+  // If redirected from PayPal
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("pro") === "1") {
+    localStorage.setItem("allowManualUnlock", "true");
+    alert("Thank you for upgrading to CoverCraft Pro!");
+    history.replaceState({}, document.title, window.location.pathname);
   }
 
-  // Only show manual unlock link if allowed
+  // Show manual unlock if allowed
+  const allowManualUnlock = localStorage.getItem("allowManualUnlock") === "true";
   const manualWrapper = document.getElementById("manualUnlockWrapper");
   if (manualWrapper && allowManualUnlock) {
     manualWrapper.style.display = "block";
   }
+
+  // Listen for manual unlock form submission
+  document.getElementById("emailUnlockForm")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const status = document.getElementById("unlockStatus");
+    const email = e.target.email.value.trim().toLowerCase();
+    status.textContent = "Checking...";
+
+    const res = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+    if (res.ok && data.credits >= 1) {
+      localStorage.setItem("userEmail", email);
+      status.textContent = "✅ Pro access restored. You may generate now.";
+      if (countMsg) countMsg.textContent = `${data.credits} credits remaining.`;
+    } else {
+      status.textContent = "❌ No credits found for that email.";
+    }
+  });
+
+  // Auto-load stored email and update credit count
+  const storedEmail = localStorage.getItem("userEmail");
+  if (storedEmail && emailInput) {
+    emailInput.value = storedEmail;
+    const res = await fetch(`/api/check-credits?email=${encodeURIComponent(storedEmail)}`);
+    const data = await res.json();
+    if (res.ok) {
+      countMsg.textContent = `${data.credits} credits remaining.`;
+    }
+  }
 });
 
+// Form submission
 document.getElementById("coverForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
-  const isPro = localStorage.getItem("isProUser") === "true";
-  let tries = parseInt(localStorage.getItem("coverTries") || "0");
+  const emailInput = document.getElementById("userEmail");
+  const email = emailInput?.value?.trim().toLowerCase();
 
-  // Block free users over the limit
-  if (!isPro && tries >= 2) {
-    alert("You've reached your free limit. Please upgrade to CoverCraft Pro.");
-    document.getElementById("paypal-container-2S7SD3LJNS3VW")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (!email) {
+    alert("Please enter your email to continue.");
+    emailInput?.focus();
+    return;
+  }
+
+  localStorage.setItem("userEmail", email); // persist for refresh
+
+  // Check if user has credits
+  const check = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
+  const data = await check.json();
+
+  if (!check.ok || data.credits <= 0) {
+    alert("You’ve used all your free/paid credits. Please purchase more to continue.");
+    document.getElementById("paypal-container-2S7SD3LJNS3VW")?.scrollIntoView({ behavior: "smooth" });
     return;
   }
 
   const formData = new FormData(e.target);
   const userInput = Object.fromEntries(formData.entries());
-
   const resultBox = document.getElementById("resultBox");
   resultBox.textContent = "Generating your cover letter... Please wait.";
 
@@ -65,22 +86,25 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
       body: JSON.stringify(userInput)
     });
 
-    const data = await response.json();
+    const genData = await response.json();
 
-    if (response.ok && data.output) {
-      resultBox.textContent = data.output;
+    if (response.ok && genData.output) {
+      resultBox.textContent = genData.output;
 
-      // Update free tries
-      if (!isPro) {
-        tries++;
-        localStorage.setItem("coverTries", tries.toString());
-        const countMsg = document.getElementById("genCountMsg");
-        if (countMsg) {
-          countMsg.textContent = `${tries}/2 free uses used.`;
-        }
-      }
+      // Consume a credit
+      await fetch(`/api/use-credit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+
+      // Update displayed credit count
+      const refresh = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
+      const newCredits = await refresh.json();
+      const countMsg = document.getElementById("genCountMsg");
+      if (countMsg) countMsg.textContent = `${newCredits.credits} credits remaining.`;
     } else {
-      resultBox.textContent = data.error || "Something went wrong generating your cover letter.";
+      resultBox.textContent = genData.error || "Something went wrong generating your cover letter.";
     }
   } catch (error) {
     console.error("API call error:", error);
