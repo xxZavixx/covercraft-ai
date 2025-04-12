@@ -7,10 +7,12 @@
   <title>Thank You – CoverCraft Pro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    // Redirect with ?pro=1 so Pro unlocks securely on home page
-    setTimeout(() => {
-      window.location.href = "/?pro=1";
-    }, 6000);
+    let seconds = 6;
+    const redirectToHome = () => {
+      clearInterval(countdown);
+      window.location.href = `${window.location.origin}/?pro=1`;
+    };
+    const countdown = setTimeout(redirectToHome, 6000);
   </script>
 </head>
 <body class="bg-gradient-to-b from-blue-50 to-white text-center px-6 py-20 text-gray-800 font-sans">
@@ -25,16 +27,18 @@
       </svg>
     </div>
     <p class="text-sm text-gray-500">Redirecting you to the generator in <span id="timer">6</span> seconds...</p>
-    <a href="/?pro=1" class="mt-6 inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Go Now</a>
+    <a href="/?pro=1" class="mt-6 inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition" aria-label="Redirect now to unlock Pro">Go Now</a>
   </div>
 
   <script>
     let seconds = 6;
     const timerEl = document.getElementById("timer");
-    const countdown = setInterval(() => {
+    const interval = setInterval(() => {
       seconds--;
       timerEl.textContent = seconds;
-      if (seconds === 0) clearInterval(countdown);
+      if (seconds <= 0) {
+        clearInterval(interval);
+      }
     }, 1000);
   </script>
 
