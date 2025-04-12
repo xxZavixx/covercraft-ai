@@ -1,3 +1,23 @@
+// /api/paypal-ipn.js
+
+import { NextApiRequest, NextApiResponse } from "next";
+import * as admin from "firebase-admin";
+import fetch from "node-fetch";
+import { Buffer } from "buffer";
+
+// Firebase Admin SDK init (runs once)
+if (!admin.apps.length) {
+  const serviceAccount = JSON.parse(
+    Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, "base64").toString("utf8")
+  );
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
+
+const db = admin.firestore();
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).end("Only POST allowed");
@@ -17,7 +37,16 @@ export default async function handler(req, res) {
     const verifyText = await verifyRes.text();
 
     if (verifyText === "VERIFIED") {
-      const { payment_status, receiver_email, payer_email, txn_id, mc_gross } = req.body;
+      const {
+        payment_status,
+        receiver_email,
+        payer_email,
+        txn_id,
+        payer_id,
+        first_name,
+        last_name,
+        mc_gross,
+      } = req.body;
 
       const isCompleted = payment_status === "Completed";
       const isCorrectEmail = receiver_email === "xzavierharris25@gmail.com";
@@ -28,7 +57,20 @@ export default async function handler(req, res) {
         console.log(`- Amount: ${mc_gross}`);
         console.log(`- Transaction ID: ${txn_id}`);
 
-        // TODO: Add unlock logic here (e.g., update DB, notify via webhook, send email)
+        // Prevent duplicate entries
+        const existing = await db.collection("buyers").doc(txn_id).get();
+        if (existing.exists) {
+          console.log("ℹ️ Transaction already stored.");
+        } else {
+          await db.collection("buyers").doc(txn_id).set({
+            email: payer_email,
+            payer_id,
+            payer_name: `${first_name} ${last_name}`,
+            amount: mc_gross,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          console.log("✅ Buyer saved to Firestore.");
+        }
       } else {
         console.log("⚠️ Payment not completed or wrong receiver email.");
       }
