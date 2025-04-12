@@ -6,6 +6,7 @@
   <title>CoverCraft AI - Instant Cover Letters</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -80,21 +81,30 @@
   <script>
     function copyToClipboard() {
       const text = document.getElementById("resultBox").textContent;
+      if (!text || text.trim() === "Fill out the form above and click generate!") {
+        alert("Nothing to copy yet.");
+        return;
+      }
       navigator.clipboard.writeText(text).then(() => {
         alert("Copied to clipboard!");
+      }).catch(() => {
+        alert("Copy failed. Try again.");
       });
     }
 
-    function downloadPDF() {
+    async function downloadPDF() {
       const content = document.getElementById("resultBox").textContent;
-      const blob = new Blob([content], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "cover_letter.pdf";
-      a.click();
-      URL.revokeObjectURL(url);
+      if (!content || content.trim() === "Fill out the form above and click generate!") {
+        alert("Nothing to download.");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const lines = doc.splitTextToSize(content, 180);
+      doc.text(lines, 10, 10);
+      doc.save("cover_letter.pdf");
     }
   </script>
 </body>
-</html> 
+</html>
