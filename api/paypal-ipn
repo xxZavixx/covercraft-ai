@@ -22,76 +22,73 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body = new URLSearchParams(req.body).toString();
+    const rawBody = new URLSearchParams(req.body).toString();
 
-    // Verify the IPN message with PayPal
+    // Verify IPN with PayPal
     const verifyRes = await fetch("https://ipnpb.paypal.com/cgi-bin/webscr", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `cmd=_notify-validate&${body}`,
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `cmd=_notify-validate&${rawBody}`,
     });
 
     const verifyText = await verifyRes.text();
 
-    if (verifyText === "VERIFIED") {
-      const {
-        payment_status,
-        receiver_email,
-        payer_email,
-        txn_id,
-        payer_id,
-        first_name,
-        last_name,
-        mc_gross,
-      } = req.body;
-
-      const isCompleted = payment_status === "Completed";
-      const isCorrectEmail = receiver_email === "xzavierharris25@gmail.com";
-
-      if (isCompleted && isCorrectEmail) {
-        const email = payer_email.toLowerCase();
-
-        // Prevent duplicate transactions
-        const txnRef = db.collection("transactions").doc(txn_id);
-        const txnSnap = await txnRef.get();
-
-        if (txnSnap.exists) {
-          console.log("ℹ️ Transaction already exists. Skipping.");
-          return res.status(200).end();
-        }
-
-        // Update buyer credits (by email)
-        const buyerRef = db.collection("buyers").doc(email);
-        const buyerSnap = await buyerRef.get();
-        const currentCredits = buyerSnap.exists ? buyerSnap.data()?.credits || 0 : 0;
-
-        await buyerRef.set(
-          {
-            email,
-            credits: currentCredits + 15,
-            payer_id,
-            payer_name: `${first_name} ${last_name}`,
-            amount: mc_gross,
-            lastPayment: admin.firestore.FieldValue.serverTimestamp(),
-          },
-          { merge: true }
-        );
-
-        await txnRef.set({
-          email,
-          amount: mc_gross,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        });
-
-        console.log(`✅ ${email} credited with 15 tokens.`);
-      } else {
-        console.warn("⚠️ Payment not completed or wrong receiver email.");
-      }
-    } else {
+    if (verifyText !== "VERIFIED") {
       console.error("❌ IPN message not verified.");
+      return res.status(400).end("Invalid IPN");
     }
+
+    const {
+      payment_status,
+      receiver_email,
+      payer_email,
+      txn_id,
+      payer_id,
+      first_name,
+      last_name,
+      mc_gross,
+    } = req.body;
+
+    const isCompleted = payment_status === "Completed";
+    const isCorrectReceiver = receiver_email === "xzavierharris25@gmail.com";
+
+    if (!isCompleted || !isCorrectReceiver) {
+      console.warn("⚠️ IPN ignored: incomplete payment or wrong receiver.");
+      return res.status(200).end();
+    }
+
+    const email = payer_email?.toLowerCase();
+    const txnRef = db.collection("transactions").doc(txn_id);
+    const txnSnap = await txnRef.get();
+
+    if (txnSnap.exists) {
+      console.log("ℹ️ Duplicate transaction. Already processed.");
+      return res.status(200).end();
+    }
+
+    const buyerRef = db.collection("buyers").doc(email);
+    const buyerSnap = await buyerRef.get();
+    const currentCredits = buyerSnap.exists ? buyerSnap.data()?.credits || 0 : 0;
+
+    await buyerRef.set(
+      {
+        email,
+        credits: currentCredits + 15,
+        payer_id,
+        payer_name: `${first_name} ${last_name}`,
+        amount: mc_gross,
+        lastPayment: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    await txnRef.set({
+      email,
+      amount: mc_gross,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log(`✅ ${email} credited with 15 cover letter credits.`);
 
     res.status(200).end();
   } catch (error) {
