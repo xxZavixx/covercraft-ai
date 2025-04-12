@@ -8,85 +8,120 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
 
-  <div class="max-w-xl mx-auto mt-20 bg-white p-6 rounded shadow">
-    <h1 class="text-2xl font-bold mb-4 text-blue-700">CoverCraft Admin Dashboard</h1>
+  <div class="max-w-xl mx-auto mt-20 bg-white p-6 rounded shadow-lg border">
+    <h1 class="text-2xl font-bold mb-6 text-blue-700 text-center">CoverCraft Admin Dashboard</h1>
 
     <!-- Email Input -->
-    <label class="block mb-2 font-semibold">User Email:</label>
-    <input type="email" id="emailInput" class="w-full border px-4 py-2 rounded mb-4" placeholder="user@example.com" />
+    <label class="block mb-2 font-semibold text-sm">User Email</label>
+    <input type="email" id="emailInput" class="w-full border px-4 py-2 rounded mb-4 text-sm" placeholder="user@example.com" />
 
-    <button onclick="fetchCredits()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4">Check Credits</button>
+    <button onclick="fetchCredits()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full mb-4">Check Credits</button>
 
-    <!-- Credit Info -->
+    <!-- Credit Info Panel -->
     <div id="creditInfo" class="mb-6 hidden">
-      <p class="mb-2">Current Credits: <span id="creditCount" class="font-bold">--</span></p>
+      <p class="mb-4 text-sm">Current Credits: <span id="creditCount" class="font-bold text-lg">--</span></p>
 
       <!-- Add Credits -->
-      <div class="mb-4">
-        <label class="block font-semibold mb-1">Add Credits:</label>
-        <input type="number" id="addAmount" value="5" class="w-full border px-4 py-2 rounded mb-2" />
-        <button onclick="addCredits()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add</button>
+      <div class="mb-6">
+        <label class="block font-semibold text-sm mb-1">Add Credits</label>
+        <div class="flex gap-2">
+          <input type="number" id="addAmount" value="5" class="w-full border px-4 py-2 rounded text-sm" />
+          <button onclick="addCredits()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add</button>
+        </div>
       </div>
 
       <!-- Set Credits -->
-      <div>
-        <label class="block font-semibold mb-1">Set Credits To:</label>
-        <input type="number" id="setAmount" value="10" class="w-full border px-4 py-2 rounded mb-2" />
-        <button onclick="setCredits()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Set</button>
+      <div class="mb-4">
+        <label class="block font-semibold text-sm mb-1">Set Credits To</label>
+        <div class="flex gap-2">
+          <input type="number" id="setAmount" value="10" class="w-full border px-4 py-2 rounded text-sm" />
+          <button onclick="setCredits()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Set</button>
+        </div>
       </div>
     </div>
 
-    <!-- Message Output -->
-    <p id="message" class="mt-6 text-sm text-gray-600"></p>
+    <!-- Output Message -->
+    <p id="message" class="mt-4 text-sm text-gray-600"></p>
   </div>
 
   <script>
     async function fetchCredits() {
       const email = document.getElementById("emailInput").value.trim().toLowerCase();
-      if (!email) return alert("Please enter an email.");
+      const message = document.getElementById("message");
 
-      const res = await fetch(`/api/check-credits?email=${email}`);
-      const data = await res.json();
+      if (!email) {
+        message.textContent = "Please enter an email.";
+        return;
+      }
 
-      if (data.credits !== undefined) {
-        document.getElementById("creditInfo").style.display = "block";
-        document.getElementById("creditCount").textContent = data.credits;
-        document.getElementById("message").textContent = "Credit info loaded.";
-      } else {
-        document.getElementById("message").textContent = "User not found.";
+      try {
+        const res = await fetch(`/api/check-credits?email=${email}`);
+        const data = await res.json();
+
+        if (res.ok && data.credits !== undefined) {
+          document.getElementById("creditCount").textContent = data.credits;
+          document.getElementById("creditInfo").style.display = "block";
+          message.textContent = "Credit info loaded.";
+        } else {
+          message.textContent = "User not found or no credits data.";
+        }
+      } catch (err) {
+        console.error(err);
+        message.textContent = "Error fetching credit info.";
       }
     }
 
     async function addCredits() {
       const email = document.getElementById("emailInput").value.trim().toLowerCase();
       const amount = parseInt(document.getElementById("addAmount").value);
+      const message = document.getElementById("message");
 
-      const res = await fetch('/api/admin-update-credits', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, add: amount })
-      });
+      if (!email || isNaN(amount)) {
+        message.textContent = "Please enter a valid email and amount.";
+        return;
+      }
 
-      const data = await res.json();
-      document.getElementById("message").textContent = data.message || "Credits added.";
-      fetchCredits();
+      try {
+        const res = await fetch('/api/admin-update-credits', {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, add: amount })
+        });
+
+        const data = await res.json();
+        message.textContent = data.message || "Credits added.";
+        fetchCredits();
+      } catch (err) {
+        console.error(err);
+        message.textContent = "Failed to add credits.";
+      }
     }
 
     async function setCredits() {
       const email = document.getElementById("emailInput").value.trim().toLowerCase();
       const amount = parseInt(document.getElementById("setAmount").value);
+      const message = document.getElementById("message");
 
-      const res = await fetch('/api/admin-update-credits', {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, set: amount })
-      });
+      if (!email || isNaN(amount)) {
+        message.textContent = "Please enter a valid email and amount.";
+        return;
+      }
 
-      const data = await res.json();
-      document.getElementById("message").textContent = data.message || "Credits set.";
-      fetchCredits();
+      try {
+        const res = await fetch('/api/admin-update-credits', {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, set: amount })
+        });
+
+        const data = await res.json();
+        message.textContent = data.message || "Credits set.";
+        fetchCredits();
+      } catch (err) {
+        console.error(err);
+        message.textContent = "Failed to set credits.";
+      }
     }
   </script>
-
 </body>
 </html>
