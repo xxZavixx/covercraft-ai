@@ -5,7 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (params.get("pro") === "1") {
     localStorage.setItem("isProUser", "true");
     alert("Thank you for upgrading to CoverCraft Pro!");
-    document.getElementById("genCountMsg").textContent = "Pro access unlocked.";
+    const countMsg = document.getElementById("genCountMsg");
+    if (countMsg) countMsg.textContent = "Pro access unlocked.";
     history.replaceState({}, document.title, window.location.pathname); // Clean URL
   }
 
@@ -18,10 +19,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const tries = parseInt(localStorage.getItem("coverTries") || "0");
   const countMsg = document.getElementById("genCountMsg");
 
-  if (isPro) {
-    countMsg.textContent = "Pro access unlocked.";
-  } else {
-    countMsg.textContent = `${tries}/2 free uses used.`;
+  if (countMsg) {
+    if (isPro) {
+      countMsg.textContent = "Pro access unlocked.";
+    } else {
+      countMsg.textContent = `${tries}/2 free uses used.`;
+    }
   }
 });
 
@@ -31,10 +34,9 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
   const isPro = localStorage.getItem("isProUser") === "true";
   let tries = parseInt(localStorage.getItem("coverTries") || "0");
 
-  // Block if over free limit
   if (!isPro && tries >= 2) {
     alert("You've reached your free limit. Please upgrade to CoverCraft Pro.");
-    document.getElementById("paypal-container-2S7SD3LJNS3VW").scrollIntoView({ behavior: "smooth" });
+    document.getElementById("paypal-container-2S7SD3LJNS3VW")?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
 
@@ -58,7 +60,6 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
     if (response.ok && data.output) {
       resultBox.textContent = data.output;
 
-      // Track free usage if not Pro
       if (!isPro) {
         tries++;
         localStorage.setItem("coverTries", tries.toString());
