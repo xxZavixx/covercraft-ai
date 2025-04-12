@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard – CoverCraft AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+  <div class="max-w-xl mx-auto mt-20 bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4 text-blue-700">CoverCraft Admin Dashboard</h1>
+
+    <!-- Email Input -->
+    <label class="block mb-2 font-semibold">User Email:</label>
+    <input type="email" id="emailInput" class="w-full border px-4 py-2 rounded mb-4" placeholder="user@example.com" />
+
+    <button onclick="fetchCredits()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4">Check Credits</button>
+
+    <!-- Credit Info -->
+    <div id="creditInfo" class="mb-6 hidden">
+      <p class="mb-2">Current Credits: <span id="creditCount" class="font-bold">--</span></p>
+
+      <!-- Add Credits -->
+      <div class="mb-4">
+        <label class="block font-semibold mb-1">Add Credits:</label>
+        <input type="number" id="addAmount" value="5" class="w-full border px-4 py-2 rounded mb-2" />
+        <button onclick="addCredits()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Add</button>
+      </div>
+
+      <!-- Set Credits -->
+      <div>
+        <label class="block font-semibold mb-1">Set Credits To:</label>
+        <input type="number" id="setAmount" value="10" class="w-full border px-4 py-2 rounded mb-2" />
+        <button onclick="setCredits()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Set</button>
+      </div>
+    </div>
+
+    <!-- Message Output -->
+    <p id="message" class="mt-6 text-sm text-gray-600"></p>
+  </div>
+
+  <script>
+    async function fetchCredits() {
+      const email = document.getElementById("emailInput").value.trim().toLowerCase();
+      if (!email) return alert("Please enter an email.");
+
+      const res = await fetch(`/api/check-credits?email=${email}`);
+      const data = await res.json();
+
+      if (data.credits !== undefined) {
+        document.getElementById("creditInfo").style.display = "block";
+        document.getElementById("creditCount").textContent = data.credits;
+        document.getElementById("message").textContent = "Credit info loaded.";
+      } else {
+        document.getElementById("message").textContent = "User not found.";
+      }
+    }
+
+    async function addCredits() {
+      const email = document.getElementById("emailInput").value.trim().toLowerCase();
+      const amount = parseInt(document.getElementById("addAmount").value);
+
+      const res = await fetch('/api/admin-update-credits', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, add: amount })
+      });
+
+      const data = await res.json();
+      document.getElementById("message").textContent = data.message || "Credits added.";
+      fetchCredits();
+    }
+
+    async function setCredits() {
+      const email = document.getElementById("emailInput").value.trim().toLowerCase();
+      const amount = parseInt(document.getElementById("setAmount").value);
+
+      const res = await fetch('/api/admin-update-credits', {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, set: amount })
+      });
+
+      const data = await res.json();
+      document.getElementById("message").textContent = data.message || "Credits set.";
+      fetchCredits();
+    }
+  </script>
+
+</body>
+</html>
