@@ -20,13 +20,13 @@ Be concise, persuasive, and professional. Format properly for a real job applica
       headers: {
         "x-api-key": process.env.ANTHROPIC_API_KEY,
         "anthropic-version": "2023-06-01",
-        "content-type": "application/json",
+        "content-type": "application/json"
       },
       body: JSON.stringify({
         model: "claude-3-haiku-20240307",
         max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      }),
+        messages: [{ role: "user", content: prompt }]
+      })
     });
 
     const data = await response.json();
