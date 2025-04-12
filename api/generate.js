@@ -34,15 +34,17 @@ Be concise, persuasive, and professional. Format properly for a real job applica
     });
 
     const data = await response.json();
+
     const result = data?.content?.[0]?.text?.trim();
 
     if (!result) {
+      console.error("Claude returned no content:", data);
       throw new Error("Empty response from Claude.");
     }
 
     res.status(200).json({ output: result });
   } catch (err) {
-    console.error("Claude API error:", err);
+    console.error("❌ Claude API error:", err);
     res.status(500).json({ error: "Claude API error. Please try again later." });
   }
 }
