@@ -1,3 +1,25 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(window.location.search);
+
+  // Auto-unlock Pro if redirected from PayPal thank-you with ?pro=1
+  if (params.get("pro") === "1") {
+    localStorage.setItem("isProUser", "true");
+    alert("Thank you for upgrading to CoverCraft Pro!");
+    document.getElementById("genCountMsg").textContent = "Pro access unlocked.";
+    history.replaceState({}, document.title, window.location.pathname); // Clean URL
+  }
+
+  const isPro = localStorage.getItem("isProUser") === "true";
+  const tries = parseInt(localStorage.getItem("coverTries") || "0");
+  const countMsg = document.getElementById("genCountMsg");
+
+  if (isPro) {
+    countMsg.textContent = "Pro access unlocked.";
+  } else {
+    countMsg.textContent = `${tries}/2 free uses used.`;
+  }
+});
+
 document.getElementById("coverForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
