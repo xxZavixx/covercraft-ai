@@ -35,6 +35,6 @@ Be concise, persuasive, and professional. Format properly for a real job applica
     res.status(200).json({ output: result });
   } catch (err) {
     console.error("Claude API error:", err);
-    res.status(500).json({ error: "Something went wrong." });
+    res.status(500).json({ error: "Claude API error. Check your API key and usage." });
   }
 }
