@@ -1,0 +1,30 @@
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end("Only POST allowed");
+
+  const body = new URLSearchParams(req.body).toString();
+
+  const verifyRes = await fetch("https://ipnpb.paypal.com/cgi-bin/webscr", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `cmd=_notify-validate&${body}`,
+  });
+
+  const verifyText = await verifyRes.text();
+
+  if (verifyText === "VERIFIED") {
+    // Optionally confirm payment status
+    const isCompleted = req.body.payment_status === "Completed";
+    const isCorrectEmail = req.body.receiver_email === "xzavierharris25@gmail.com";
+
+    if (isCompleted && isCorrectEmail) {
+      // Unlock logic here (e.g., flag user, send webhook, etc.)
+      console.log("✅ Payment verified and completed.");
+    } else {
+      console.log("⚠️ Payment not completed or incorrect receiver.");
+    }
+  } else {
+    console.log("❌ Invalid IPN call.");
+  }
+
+  res.status(200).end();
+}
