@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Unlock Pro if redirected from PayPal thank-you page
   if (params.get("pro") === "1") {
     localStorage.setItem("isProUser", "true");
+    localStorage.setItem("allowManualUnlock", "true"); // allow future unlock visibility
     alert("Thank you for upgrading to CoverCraft Pro!");
     const countMsg = document.getElementById("genCountMsg");
     if (countMsg) countMsg.textContent = "Pro access unlocked.";
@@ -16,15 +17,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const isPro = localStorage.getItem("isProUser") === "true";
+  const allowManualUnlock = localStorage.getItem("allowManualUnlock") === "true";
   const tries = parseInt(localStorage.getItem("coverTries") || "0");
   const countMsg = document.getElementById("genCountMsg");
 
+  // Update usage counter
   if (countMsg) {
     if (isPro) {
       countMsg.textContent = "Pro access unlocked.";
     } else {
       countMsg.textContent = `${tries}/2 free uses used.`;
     }
+  }
+
+  // Only show manual unlock link if allowed
+  const manualWrapper = document.getElementById("manualUnlockWrapper");
+  if (manualWrapper && allowManualUnlock) {
+    manualWrapper.style.display = "block";
   }
 });
 
