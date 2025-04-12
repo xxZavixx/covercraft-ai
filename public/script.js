@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const emailInput = document.getElementById("userEmail");
   const countMsg = document.getElementById("genCountMsg");
 
-  // If redirected from PayPal
+  // If redirected from PayPal with Pro access
   const params = new URLSearchParams(window.location.search);
   if (params.get("pro") === "1") {
     localStorage.setItem("allowManualUnlock", "true");
@@ -10,44 +10,60 @@ document.addEventListener("DOMContentLoaded", async () => {
     history.replaceState({}, document.title, window.location.pathname);
   }
 
-  // Show manual unlock if allowed
+  // Show manual unlock option
   const allowManualUnlock = localStorage.getItem("allowManualUnlock") === "true";
   const manualWrapper = document.getElementById("manualUnlockWrapper");
   if (manualWrapper && allowManualUnlock) {
     manualWrapper.style.display = "block";
   }
 
-  // Listen for manual unlock form submission
+  // Manual unlock form
   document.getElementById("emailUnlockForm")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const status = document.getElementById("unlockStatus");
     const email = e.target.email.value.trim().toLowerCase();
+
+    if (!email) {
+      status.textContent = "Please enter a valid email.";
+      return;
+    }
+
     status.textContent = "Checking...";
 
-    const res = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
-    const data = await res.json();
-    if (res.ok && data.credits >= 1) {
-      localStorage.setItem("userEmail", email);
-      status.textContent = "✅ Pro access restored. You may generate now.";
-      if (countMsg) countMsg.textContent = `${data.credits} credits remaining.`;
-    } else {
-      status.textContent = "❌ No credits found for that email.";
+    try {
+      const res = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+
+      if (res.ok && data.credits >= 1) {
+        localStorage.setItem("userEmail", email);
+        status.textContent = "✅ Pro access restored. You may now generate.";
+        if (countMsg) countMsg.textContent = `${data.credits} credits remaining.`;
+      } else {
+        status.textContent = "❌ No credits found for that email.";
+      }
+    } catch (err) {
+      console.error(err);
+      status.textContent = "❌ Error checking credits.";
     }
   });
 
-  // Auto-load stored email and update credit count
+  // Auto-load stored email and display credit count
   const storedEmail = localStorage.getItem("userEmail");
   if (storedEmail && emailInput) {
     emailInput.value = storedEmail;
-    const res = await fetch(`/api/check-credits?email=${encodeURIComponent(storedEmail)}`);
-    const data = await res.json();
-    if (res.ok) {
-      countMsg.textContent = `${data.credits} credits remaining.`;
+    try {
+      const res = await fetch(`/api/check-credits?email=${encodeURIComponent(storedEmail)}`);
+      const data = await res.json();
+      if (res.ok && typeof data.credits === "number") {
+        countMsg.textContent = `${data.credits} credits remaining.`;
+      }
+    } catch (error) {
+      console.warn("Could not fetch credits.");
     }
   }
 });
 
-// Form submission
+// Main form submission
 document.getElementById("coverForm").addEventListener("submit", async (e) => {
   e.preventDefault();
 
@@ -60,14 +76,14 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
     return;
   }
 
-  localStorage.setItem("userEmail", email); // persist for refresh
+  localStorage.setItem("userEmail", email);
 
-  // Check if user has credits
-  const check = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
-  const data = await check.json();
+  // Check credits before generating
+  const checkRes = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
+  const creditData = await checkRes.json();
 
-  if (!check.ok || data.credits <= 0) {
-    alert("You’ve used all your free/paid credits. Please purchase more to continue.");
+  if (!checkRes.ok || !creditData.credits || creditData.credits <= 0) {
+    alert("You’ve used all your free or purchased credits. Please buy more.");
     document.getElementById("paypal-container-2S7SD3LJNS3VW")?.scrollIntoView({ behavior: "smooth" });
     return;
   }
@@ -80,31 +96,31 @@ document.getElementById("coverForm").addEventListener("submit", async (e) => {
   try {
     const response = await fetch("/api/generate", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(userInput)
     });
 
-    const genData = await response.json();
+    const data = await response.json();
 
-    if (response.ok && genData.output) {
-      resultBox.textContent = genData.output;
+    if (response.ok && data.output) {
+      resultBox.textContent = data.output;
 
-      // Consume a credit
-      await fetch(`/api/use-credit`, {
+      // Use a credit
+      await fetch("/api/use-credit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email })
       });
 
-      // Update displayed credit count
-      const refresh = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
-      const newCredits = await refresh.json();
+      // Refresh credit count
+      const refreshRes = await fetch(`/api/check-credits?email=${encodeURIComponent(email)}`);
+      const refreshData = await refreshRes.json();
       const countMsg = document.getElementById("genCountMsg");
-      if (countMsg) countMsg.textContent = `${newCredits.credits} credits remaining.`;
+      if (countMsg && typeof refreshData.credits === "number") {
+        countMsg.textContent = `${refreshData.credits} credits remaining.`;
+      }
     } else {
-      resultBox.textContent = genData.error || "Something went wrong generating your cover letter.";
+      resultBox.textContent = data.error || "Something went wrong generating your cover letter.";
     }
   } catch (error) {
     console.error("API call error:", error);
