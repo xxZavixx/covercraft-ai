@@ -5,7 +5,7 @@ import * as admin from "firebase-admin";
 import fetch from "node-fetch";
 import { Buffer } from "buffer";
 
-// Firebase Admin SDK init (runs once)
+// Initialize Firebase Admin SDK once
 if (!admin.apps.length) {
   const serviceAccount = JSON.parse(
     Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, "base64").toString("utf8")
@@ -52,24 +52,38 @@ export default async function handler(req, res) {
       const isCorrectEmail = receiver_email === "xzavierharris25@gmail.com";
 
       if (isCompleted && isCorrectEmail) {
-        console.log("✅ VERIFIED PayPal payment:");
-        console.log(`- From: ${payer_email}`);
-        console.log(`- Amount: ${mc_gross}`);
-        console.log(`- Transaction ID: ${txn_id}`);
+        const email = payer_email.toLowerCase();
+        const buyerRef = db.collection("buyers").doc(email);
+        const buyerDoc = await buyerRef.get();
 
-        // Prevent duplicate entries
-        const existing = await db.collection("buyers").doc(txn_id).get();
-        if (existing.exists) {
-          console.log("ℹ️ Transaction already stored.");
-        } else {
-          await db.collection("buyers").doc(txn_id).set({
-            email: payer_email,
-            payer_id,
-            payer_name: `${first_name} ${last_name}`,
+        const currentCredits = buyerDoc.exists ? buyerDoc.data()?.credits || 0 : 0;
+
+        // Prevent duplicate processing by checking txn_id
+        const txnRef = db.collection("transactions").doc(txn_id);
+        const txnDoc = await txnRef.get();
+
+        if (!txnDoc.exists) {
+          await buyerRef.set(
+            {
+              email,
+              payer_id,
+              payer_name: `${first_name} ${last_name}`,
+              amount: mc_gross,
+              credits: currentCredits + 15, // add 15 new credits
+              lastPayment: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+
+          await txnRef.set({
+            email,
             amount: mc_gross,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            timestamp: admin.firestore.FieldValue.serverTimestamp(),
           });
-          console.log("✅ Buyer saved to Firestore.");
+
+          console.log("✅ Buyer and transaction stored.");
+        } else {
+          console.log("ℹ️ Transaction already exists. Skipping duplicate.");
         }
       } else {
         console.log("⚠️ Payment not completed or wrong receiver email.");
