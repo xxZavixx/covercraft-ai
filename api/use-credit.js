@@ -1,3 +1,5 @@
+// /api/use-credit.js
+
 import * as admin from "firebase-admin";
 
 if (!admin.apps.length) {
@@ -22,31 +24,29 @@ export default async function handler(req, res) {
   }
 
   try {
-    const docRef = db.collection("buyers").doc(email);
-    const doc = await docRef.get();
+    const userRef = db.collection("buyers").doc(email);
+    const userDoc = await userRef.get();
 
-    let currentCredits = 2; // Default to 2 free credits if doc doesn't exist
+    let currentCredits = 2; // fallback to 2 free credits if no record
 
-    if (doc.exists) {
-      currentCredits = doc.data()?.credits ?? 0;
+    if (userDoc.exists) {
+      currentCredits = userDoc.data()?.credits ?? 0;
     }
 
     if (currentCredits > 0) {
-      await docRef.set(
-        {
-          credits: currentCredits - 1,
-        },
+      await userRef.set(
+        { credits: currentCredits - 1 },
         { merge: true }
       );
 
-      console.log(`✅ 1 credit used for ${email}. Remaining: ${currentCredits - 1}`);
+      console.log(`✅ ${email} used 1 credit. Remaining: ${currentCredits - 1}`);
       return res.status(200).json({ success: true, remaining: currentCredits - 1 });
     } else {
-      console.warn(`❌ No credits left for ${email}`);
+      console.warn(`❌ ${email} has no credits remaining.`);
       return res.status(403).json({ error: "No credits remaining" });
     }
   } catch (error) {
-    console.error("❌ Error using credit:", error);
+    console.error("❌ Firestore error using credit:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
