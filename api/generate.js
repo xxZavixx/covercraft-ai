@@ -5,6 +5,10 @@ export default async function handler(req, res) {
 
   const { jobTitle, company, skills, experience, tone } = req.body;
 
+  if (!jobTitle || !company || !skills || !experience || !tone) {
+    return res.status(400).json({ error: "Missing required fields." });
+  }
+
   const prompt = `Write a ${tone.toLowerCase()} cover letter for the following job:
 
 Job Title: ${jobTitle}
@@ -30,11 +34,15 @@ Be concise, persuasive, and professional. Format properly for a real job applica
     });
 
     const data = await response.json();
-    const result = data.content?.[0]?.text || "AI response not available.";
+    const result = data?.content?.[0]?.text?.trim();
+
+    if (!result) {
+      throw new Error("Empty response from Claude.");
+    }
 
     res.status(200).json({ output: result });
   } catch (err) {
     console.error("Claude API error:", err);
-    res.status(500).json({ error: "Claude API error. Check your API key and usage." });
+    res.status(500).json({ error: "Claude API error. Please try again later." });
   }
 }
