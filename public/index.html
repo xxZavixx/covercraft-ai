@@ -62,7 +62,7 @@
     <h3 class="text-xl font-semibold mb-2 text-gray-800">Want More?</h3>
     <p class="text-gray-600 mb-4">Unlock unlimited cover letters + premium export features.</p>
     <div id="paypal-container-2S7SD3LJNS3VW" class="mb-2"></div>
-    <button onclick="unlockPro()" class="text-sm text-blue-500 underline mt-2">Already paid? Click here to unlock Pro</button>
+    <p class="text-sm text-gray-500 mt-2">Already paid? Please return from the PayPal thank-you page to unlock Pro.</p>
     <script>
       paypal.HostedButtons({
         hostedButtonId: "2S7SD3LJNS3VW",
@@ -75,6 +75,7 @@
     Built by <a href="https://cryptobroski.xyz" class="text-blue-600 hover:underline">CryptoBroski</a> | CoverCraft AI &copy; 2025
   </footer>
 
+  <!-- Scripts -->
   <script src="script.js"></script>
   <script>
     function copyToClipboard() {
@@ -93,21 +94,6 @@
       a.download = "cover_letter.pdf";
       a.click();
       URL.revokeObjectURL(url);
-    }
-
-    function unlockPro() {
-      localStorage.setItem("isProUser", "true");
-      alert("CoverCraft Pro unlocked!");
-      document.getElementById("genCountMsg").textContent = "Pro access unlocked.";
-    }
-
-    // Display current usage count
-    const tries = parseInt(localStorage.getItem("coverTries") || "0");
-    const isPro = localStorage.getItem("isProUser") === "true";
-    if (isPro) {
-      document.getElementById("genCountMsg").textContent = "Pro access unlocked.";
-    } else {
-      document.getElementById("genCountMsg").textContent = `${tries}/2 free uses used.`;
     }
   </script>
 </body>
